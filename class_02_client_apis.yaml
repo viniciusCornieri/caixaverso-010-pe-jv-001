@@ -1,0 +1,77 @@
+openapi: 3.0.3
+info:
+  title: Cliente API (Aula 02)
+  version: 1.0.0
+paths:
+  /clientes:
+    get:
+      summary: Lista todos os clientes
+      responses:
+        '200':
+          description: Operação bem-sucedida
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClienteResponse'
+    post:
+      summary: Cadastra um novo cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClienteRequest'
+      responses:
+        '201':
+          description: Cliente criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteResponse'
+  /clientes/{documento}:
+    get:
+      summary: Busca um cliente pelo documento
+      parameters:
+        - name: documento
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cliente retornado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteResponse'
+        '404':
+          description: Cliente não encontrado
+components:
+  schemas:
+    ClienteRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          example: "João Silva"
+        documento:
+          type: string
+          example: "12345678900"
+      required:
+        - nome
+        - documento
+    ClienteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        nome:
+          type: string
+          example: "João Silva"
+        documento:
+          type: string
+          example: "12345678900"
