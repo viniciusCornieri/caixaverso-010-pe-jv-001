@@ -1,4 +1,4 @@
-package com.ada.model;
+package com.ada.domain.cliente;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,9 +14,6 @@ public class Cliente {
     private final UUID id = UUID.randomUUID();
     private String nome;
     private String documento;
-
-    public static void main(String[] args) {
-        System.out.println(new Cliente("Vini", "123"));
-    }
+    private Endereco endereco;
 
 }

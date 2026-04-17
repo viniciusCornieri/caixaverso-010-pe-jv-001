@@ -1,0 +1,136 @@
+openapi: 3.0.3
+info:
+  title: Cliente API (Aula 03)
+  description: API de gerenciamento de clientes com preenchimento automático de endereço via integração com ViaCEP.
+  version: 1.1.0
+tags:
+  - name: Clientes
+    description: Operações relacionadas ao cadastro e consulta de clientes
+paths:
+  /clientes:
+    get:
+      summary: Lista todos os clientes
+      description: Retorna uma lista de todos os clientes cadastrados no sistema.
+      tags:
+        - Clientes
+      responses:
+        '200':
+          description: Listagem de clientes recuperada com sucesso.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClienteResponse'
+    post:
+      summary: Cadastra um novo cliente
+      description: Recebe os dados básicos e o CEP. O sistema consulta a API do ViaCEP e retorna o cliente com logradouro e bairro preenchidos.
+      tags:
+        - Clientes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClienteRequest'
+      responses:
+        '201':
+          description: Cliente criado com sucesso e endereço completo preenchido automaticamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteResponse'
+        '400':
+          description: Dados de entrada inválidos ou CEP não encontrado.
+  /clientes/{documento}:
+    get:
+      summary: Busca um cliente pelo documento
+      description: Retorna os detalhes de um único cliente buscando pelo seu CPF/CNPJ.
+      tags:
+        - Clientes
+      parameters:
+        - name: documento
+          in: path
+          description: Documento de identificação do cliente (CPF ou CNPJ)
+          required: true
+          schema:
+            type: string
+            example: "12345678900"
+      responses:
+        '200':
+          description: Cliente encontrado e retornado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteResponse'
+        '404':
+          description: Cliente não encontrado para o documento informado.
+components:
+  schemas:
+    ClienteRequest:
+      type: object
+      description: Objeto de requisição para cadastro de cliente. Não deve incluir id, logradouro e bairro.
+      properties:
+        nome:
+          type: string
+          description: Nome completo do cliente.
+          example: "João Silva"
+        documento:
+          type: string
+          description: Documento de identificação legal único (CPF/CNPJ).
+          example: "12345678900"
+        cep:
+          type: string
+          description: CEP válido (8 dígitos, com ou sem máscara). Será utilizado na busca automática.
+          example: "01001-000"
+        numero:
+          type: string
+          description: Número da residência ou do estabelecimento físico.
+          example: "123"
+        complemento:
+          type: string
+          description: Detalhamento extra do endereço (Ponto de referência, bloco, apartamento, etc).
+          example: "Apto 42"
+      required:
+        - nome
+        - documento
+        - cep
+        - numero
+    ClienteResponse:
+      type: object
+      description: Objeto de resposta representando um cliente plenamente cadastrado.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único gerado na consolidação do cadastro.
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        nome:
+          type: string
+          description: Nome completo cadastrado.
+          example: "João Silva"
+        documento:
+          type: string
+          description: Documento informado no cadastro.
+          example: "12345678900"
+        cep:
+          type: string
+          description: CEP fornecido no cadastro.
+          example: "01001-000"
+        logradouro:
+          type: string
+          description: Logradouro (rua, avenida) retornado automaticamente pelo ViaCEP.
+          example: "Praça da Sé"
+        bairro:
+          type: string
+          description: Bairro retornado automaticamente pelo ViaCEP.
+          example: "Sé"
+        numero:
+          type: string
+          description: Número da residência cadastrado.
+          example: "123"
+        complemento:
+          type: string
+          description: Complemento retornado. Se não fornecido, preenchido como 'N/A'.
+          example: "Apto 42"
+          default: "N/A"

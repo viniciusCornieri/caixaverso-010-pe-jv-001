@@ -1,0 +1,83 @@
+openapi: 3.0.3
+info:
+  title: API Externa de Análise de Crédito
+  description: Simula um serviço de avaliação de crédito (Mock Server). Tem como objetivo validar clientes e fornecer as taxas de juros de mercado aplicáveis para a linha de crédito solicitada.
+  version: 1.0.0
+tags:
+  - name: Avaliação
+    description: Recursos focados na análise de risco e elegibilidade
+servers:
+  - url: https://api.sandbox.bank.example.com/v1
+paths:
+  clientes/{id}/taxas/{tipo_emprestimo}/elegibilidade:
+    get:
+      summary: Executa análise de risco e consulta índice da taxa
+      description: Endpoint HTTP GET que avalia a saúde financeira do cliente com base no seu UUID e retorna a taxa de juros ou rejeita a transação caso a elegibilidade falhe.
+      tags:
+        - Avaliação
+      operationId: checkEligibility
+      parameters:
+        - name: clienteId
+          in: query
+          required: true
+          description: Identificador único UUID de conta do solicitante.
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+        - name: tipoAmortizacao
+          in: query
+          required: true
+          description: Sistema de amortização selecionado pelo solicitante.
+          schema:
+            type: string
+            enum: [SAC, PRICE]
+            example: "SAC"
+      responses:
+        '200':
+          description: Solicitação aprovada. Retorna a taxa de juros calculada aplicável.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateResponse'
+        '400':
+          description: Cliente inelegível, reprovado pela política interna do banco ou risco alto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    RateResponse:
+      type: object
+      description: Objeto contendo os dados e a referência da taxa consultada.
+      properties:
+        clientId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+          description: O identificador único de base UUID que foi avaliado.
+        taxaJurosMensal:
+          type: number
+          format: integer
+          example: 10
+          description: Taxa de juros do mês indexada em formato fracionário (ex. 0.02 corresponde a incidência de 2% ao mês).
+      required:
+        - clientId
+        - taxaJurosMensal
+    ErrorResponse:
+      type: object
+      description: Resposta genérica da barreira de integridade focada na clareza informativa.
+      properties:
+        codigo:
+          type: string
+          example: "CREDITO_REPROVADO"
+          description: Identificador padronizado da causa do erro.
+        mensagem:
+          type: string
+          example: "O cliente informado não atendeu aos critérios técnicos de elegibilidade."
+          description: Detalhamento explícito destinado ao mapeamento da UI do sistema.
+      required:
+        - codigo
+        - mensagem

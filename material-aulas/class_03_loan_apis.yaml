@@ -1,0 +1,179 @@
+openapi: 3.0.3
+info:
+  title: Microserviço de Empréstimos API (Aula 03)
+  description: API de gestão de empréstimos, simulando integrações com o sistema de avaliação de crédito externo para cálculos de taxa de juros.
+  version: 1.1.0
+tags:
+  - name: Empréstimos
+    description: Operações de simulação, contratação e cancelamento de empréstimos
+paths:
+  /emprestimos:
+    get:
+      summary: Lista todos os empréstimos cadastrados
+      description: Retorna a listagem de todos os contratos de empréstimos já efetuados e salvos no sistema.
+      tags:
+        - Empréstimos
+      responses:
+        '200':
+          description: Listagem de empréstimos recuperada com sucesso.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmprestimoResponse'
+    post:
+      summary: Cria um novo contrato de empréstimo consultando a taxa de juros externa
+      description: Recebe os dados do empréstimo. O sistema consulta a API de avaliação de crédito para obter a taxa de juros aplicável e gera as parcelas (SAC ou PRICE).
+      tags:
+        - Empréstimos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmprestimoRequest'
+      responses:
+        '201':
+          description: Empréstimo e parcelas criados com sucesso com a taxa de juros externa aplicada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmprestimoResponse'
+        '400':
+          description: Dados inválidos ou empréstimo rejeitado devido à avaliação de crédito na API externa.
+  /emprestimos/{id}:
+    delete:
+      summary: Remove um empréstimo cadastrado
+      description: Exclui permanentemente o contrato de empréstimo e todas as suas parcelas da base de dados.
+      tags:
+        - Empréstimos
+      parameters:
+        - name: id
+          in: path
+          description: UUID correspondente ao identificador único do contrato do empréstimo.
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "a38c2020-f463-4b6a-986c-7e3f81ad50c4"
+      responses:
+        '204':
+          description: Empréstimo removido com sucesso.
+        '404':
+          description: Contrato de empréstimo não encontrado.
+components:
+  schemas:
+    EmprestimoRequest:
+      type: object
+      description: Objeto de requisição com as condicionalidades financeiras exigidas para simulação/concessão.
+      properties:
+        clienteId:
+          type: string
+          format: uuid
+          description: ID do cliente solicitante do empréstimo.
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        valorTotal:
+          type: number
+          format: float
+          description: Montante do crédito pretendido em Reais (R$).
+          example: 10000.00
+        quantidadeParcelas:
+          type: integer
+          description: Prazo de quitação solicitado, expresso em meses.
+          example: 12
+        tipoAmortizacao:
+          type: string
+          description: Metodologia de amortização contábil selecionada.
+          enum: [SAC, PRICE]
+          example: "SAC"
+      required:
+        - clienteId
+        - valorTotal
+        - quantidadeParcelas
+        - tipoAmortizacao
+    Parcela:
+      type: object
+      description: Uma entidade em formato de extrato que sumariza cada mês cobrado pelo empréstimo.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID único desta parcela gerada.
+          example: "ba7d4c2b-8a1a-4d2a-a92c-68e1ab4c885c"
+        ordem:
+          type: integer
+          description: Mês da cobrança na linha temporal do contrato (1 = Primeiro mês...).
+          example: 1
+        dataVencimento:
+          type: string
+          format: date
+          description: Prazo limite programado para pagamento.
+          example: "2024-05-15"
+        valorAmortizacao:
+          type: number
+          format: float
+          description: Em quanto a parcela deduz o principal em aberto naquela rodada.
+          example: 833.33
+        valorJuros:
+          type: number
+          format: float
+          description: O peso em Reais da taxa naquele período temporal.
+          example: 200.00
+        valorPrestacao:
+          type: number
+          format: float
+          description: O valor final a desembolsar pelo cliente no encerramento do mês.
+          example: 1033.33
+        status:
+          type: string
+          description: Situação perante o processamento financeiro.
+          example: "PENDENTE"
+          enum: [PENDENTE, PAGA, CANCELADA]
+        saldoDevedor:
+          type: number
+          format: float
+          description: O quanto ainda sobra atrelado à dívida caso seja liquidada imediatamente.
+          example: 9166.67
+    EmprestimoResponse:
+      type: object
+      description: O snapshot completo e aprovado referenciando a liberação do recurso.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador final do contrato fechado.
+          example: "a38c2020-f463-4b6a-986c-7e3f81ad50c4"
+        clienteId:
+          type: string
+          format: uuid
+          description: Cliente responsável atrelado.
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        valorTotal:
+          type: number
+          format: float
+          description: Montante repassado de fato.
+          example: 10000.00
+        quantidadeParcelas:
+          type: integer
+          description: Prazos concordados.
+          example: 12
+        tipoAmortizacao:
+          type: string
+          description: Régua utilizada para o percurso.
+          example: "SAC"
+        taxaJurosMensal:
+          type: number
+          format: float
+          description: Taxa consultada na API externa aplicada em momento real (Em porcentagem).
+          example: 0.02
+        status:
+          type: string
+          description: Progressão geral do Contrato.
+          example: "PENDENTE"
+          enum: [PENDENTE, PAGO]
+        parcelas:
+          type: array
+          description: Calendário construído preenchendo detalhadamente parcelas atreladas à inflação mensal.
+          items:
+            $ref: '#/components/schemas/Parcela'
