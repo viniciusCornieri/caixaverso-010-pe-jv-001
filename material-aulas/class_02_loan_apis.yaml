@@ -1,0 +1,154 @@
+openapi: 3.0.3
+info:
+  title: Microserviço de Empréstimos API (Aula 02)
+  description: API para gestão de contratos de empréstimos e geração de parcelas de amortização.
+  version: 1.0.0
+  contact:
+    name: Suporte ADA
+    email: suporte@ada.com.br
+servers:
+  - url: http://localhost:8080
+    description: Local Server
+tags:
+  - name: Empréstimos
+    description: Operações de simulação, contratação e cancelamento de empréstimos
+paths:
+  /emprestimos:
+    get:
+      summary: Lista todos os empréstimos cadastrados
+      description: Retorna uma lista de todos os contratos de empréstimo registrados no sistema.
+      operationId: listLoans
+      tags:
+        - Empréstimos
+      responses:
+        '200':
+          description: Listagem recuperada
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmprestimoResponse'
+    post:
+      summary: Solicita a inserção de um contrato de empréstimo e geração das parcelas
+      description: Recebe os parâmetros contábeis e a taxa de juros (informada manualmente nesta aula) para gerar a tabela de pagamentos (SAC ou PRICE).
+      operationId: createLoan
+      tags:
+        - Empréstimos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmprestimoRequest'
+      responses:
+        '201':
+          description: Contrato e parcelas criados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmprestimoResponse'
+  /emprestimos/{id}:
+    delete:
+      summary: Remove e revoga permanentemente uma intenção comercial
+      description: Exclui um contrato de empréstimo existente com base no identificador UUID fornecido.
+      operationId: deleteLoan
+      tags:
+        - Empréstimos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleção finalizada com sucesso
+components:
+  schemas:
+    EmprestimoRequest:
+      type: object
+      properties:
+        clienteId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        valorTotal:
+          type: number
+          format: float
+          example: 10000.00
+        quantidadeParcelas:
+          type: integer
+          example: 12
+        tipoAmortizacao:
+          type: string
+          enum: [SAC, PRICE]
+          example: "SAC"
+        taxaJurosMensal:
+          type: integer
+          description: Removido no refatoramento da Aula 03.
+          example: 2
+      required:
+        - clienteId
+        - valorTotal
+        - quantidadeParcelas
+        - tipoAmortizacao
+        - taxaJurosMensal
+    Parcela:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ordem:
+          type: integer
+          example: 1
+        dataVencimento:
+          type: string
+          format: date
+          example: "2024-05-15"
+        valorAmortizacao:
+          type: number
+          format: float
+          example: 833.33
+        valorJuros:
+          type: number
+          format: float
+          example: 200.00
+        valorPrestacao:
+          type: number
+          format: float
+          example: 1033.33
+        status:
+          type: string
+          example: "PENDENTE"
+        saldoDevedor:
+          type: number
+          format: float
+          example: 9166.67
+    EmprestimoResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clienteId:
+          type: string
+          format: uuid
+        valorTotal:
+          type: number
+          format: float
+        quantidadeParcelas:
+          type: integer
+        tipoAmortizacao:
+          type: string
+        taxaJurosMensal:
+          type: integer
+        status:
+          type: string
+          example: "PENDENTE"
+        parcelas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parcela'

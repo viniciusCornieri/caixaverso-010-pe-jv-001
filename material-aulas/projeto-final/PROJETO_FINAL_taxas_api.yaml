@@ -3,22 +3,25 @@ info:
   title: API Externa de Análise de Crédito
   description: Simula um serviço de avaliação de crédito (Mock Server). Tem como objetivo validar clientes e fornecer as taxas de juros de mercado aplicáveis para a linha de crédito solicitada.
   version: 1.0.0
+  contact:
+    name: Suporte ADA
+    email: suporte@ada.com.br
 tags:
-  - name: Avaliação
-    description: Recursos focados na análise de risco e elegibilidade
+  - name: Clientes
+    description: Operações relacionadas ao cadastro e consulta de clientes
 servers:
-  - url: https://api.sandbox.bank.example.com/v1
+  - url: http://localhost:9000
 paths:
-  clientes/{id}/taxas/{tipo_emprestimo}/elegibilidade:
+  /clientes/{clienteId}/taxas/{tipoAmortizacao}/elegibilidade:
     get:
       summary: Executa análise de risco e consulta índice da taxa
       description: Endpoint HTTP GET que avalia a saúde financeira do cliente com base no seu UUID e retorna a taxa de juros ou rejeita a transação caso a elegibilidade falhe.
       tags:
-        - Avaliação
+        - Clientes
       operationId: checkEligibility
       parameters:
         - name: clienteId
-          in: query
+          in: path
           required: true
           description: Identificador único UUID de conta do solicitante.
           schema:
@@ -26,7 +29,7 @@ paths:
             format: uuid
             example: "123e4567-e89b-12d3-a456-426614174000"
         - name: tipoAmortizacao
-          in: query
+          in: path
           required: true
           description: Sistema de amortização selecionado pelo solicitante.
           schema:
@@ -59,10 +62,9 @@ components:
           example: "123e4567-e89b-12d3-a456-426614174000"
           description: O identificador único de base UUID que foi avaliado.
         taxaJurosMensal:
-          type: number
-          format: integer
-          example: 10
-          description: Taxa de juros do mês indexada em formato fracionário (ex. 0.02 corresponde a incidência de 2% ao mês).
+          type: integer
+          example: 2
+          description: Taxa de juros do mês indexada em formato inteiro (ex. 2 corresponde a incidência de 2% ao mês).
       required:
         - clientId
         - taxaJurosMensal

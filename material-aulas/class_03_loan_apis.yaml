@@ -3,6 +3,12 @@ info:
   title: Microserviço de Empréstimos API (Aula 03)
   description: API de gestão de empréstimos, simulando integrações com o sistema de avaliação de crédito externo para cálculos de taxa de juros.
   version: 1.1.0
+  contact:
+    name: Suporte ADA
+    email: suporte@ada.com.br
+servers:
+  - url: http://localhost:8080
+    description: Local Server
 tags:
   - name: Empréstimos
     description: Operações de simulação, contratação e cancelamento de empréstimos
@@ -11,6 +17,7 @@ paths:
     get:
       summary: Lista todos os empréstimos cadastrados
       description: Retorna a listagem de todos os contratos de empréstimos já efetuados e salvos no sistema.
+      operationId: listLoans
       tags:
         - Empréstimos
       responses:
@@ -25,6 +32,7 @@ paths:
     post:
       summary: Cria um novo contrato de empréstimo consultando a taxa de juros externa
       description: Recebe os dados do empréstimo. O sistema consulta a API de avaliação de crédito para obter a taxa de juros aplicável e gera as parcelas (SAC ou PRICE).
+      operationId: createLoan
       tags:
         - Empréstimos
       requestBody:
@@ -46,6 +54,7 @@ paths:
     delete:
       summary: Remove um empréstimo cadastrado
       description: Exclui permanentemente o contrato de empréstimo e todas as suas parcelas da base de dados.
+      operationId: deleteLoan
       tags:
         - Empréstimos
       parameters:
@@ -164,9 +173,9 @@ components:
           example: "SAC"
         taxaJurosMensal:
           type: number
-          format: float
+          format: integer
           description: Taxa consultada na API externa aplicada em momento real (Em porcentagem).
-          example: 0.02
+          example: 2
         status:
           type: string
           description: Progressão geral do Contrato.

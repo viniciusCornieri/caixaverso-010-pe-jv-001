@@ -1,0 +1,261 @@
+openapi: 3.0.3
+info:
+  title: API do Microsserviço de Empréstimos (Projeto Final)
+  description: Especificação REST OpenAPI descrevendo as funcionalidades que o próprio aluno deverá construir em seu microsserviço de financiamentos, contemplando simulações, listagens e pagamentos (Tabelas SAC/PRICE).
+  version: 1.0.0
+  contact:
+    name: Suporte ADA
+    email: suporte@ada.com.br
+tags:
+  - name: Empréstimos
+    description: Gerenciamento primário dos contratos de crédito.
+  - name: Parcelas
+    description: Visualização detalhada e efetivação de pagamentos das faturas mensais.
+servers:
+  - url: http://localhost:8080
+    description: Servidor Local (Quarkus)
+paths:
+  /emprestimos:
+    get:
+      summary: Listagem de Contratos (História 5)
+      description: Retorna a coleção de empréstimos consolidados previamente. Pode utilizar o ID do cliente via query params para filtrar a busca (ou abstraí-lo inteiramente via token de segurança, dependendo da abordagem implementada).
+      operationId: listarEmprestimos
+      tags:
+        - Empréstimos
+      parameters:
+        - name: clienteId
+          in: query
+          required: false
+          description: Filtro para atrelar a consulta unicamente aos serviços contratados pelo cliente de destino.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Listagem de contratos devolvida com sucesso.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmprestimoResponse'
+    post:
+      summary: Criação e Avaliação de Empréstimo (Histórias 1 e 2)
+      description: Ponto de partida transacional. Aciona a API Externa de Elegibilidade (via REST Client) visando coletar aprovação e juros do cliente, executa internamente o cálculo das parcelas estipuladas e persiste as faturas recursivamente via banco de dados local.
+      operationId: criarEmprestimo
+      tags:
+        - Empréstimos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmprestimoRequest'
+      responses:
+        '201':
+          description: Empréstimo e extrato (parcelas) calculados, validados e instanciados com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmprestimoResponse'
+        '400':
+          description: Rejeição motivada por parâmetros mal formatados (Bean Validation limitando dados como quantidade excessiva de meses, e valores ilegais) ou risco financeiro negado repassado pela API de Elegibilidade.
+  /emprestimos/{id}:
+    delete:
+      summary: Revogação Fictícia e Deleção de Empréstimo (História 3 - Rota Segura)
+      description: Rota engessada obrigatoriamente por autorização explícita mapeada para perfis @RolesAllowed("Gerente"). Causa o purge do banco daquele financiamento.
+      operationId: deletarEmprestimo
+      tags:
+        - Empréstimos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Purge completo executado com sucesso e ausência de retorno no payload.
+        '401':
+          description: Inexistência de credenciais vigentes no tráfego gerando rejeição frontal.
+        '403':
+          description: Acesso validado ao sistema mas faltante de privilégio especial de percurso ("Forbidden").
+        '404':
+          description: Insucesso na localização prévia do registro para remoção.
+  /emprestimos/{id}/parcelas:
+    get:
+      summary: Extrato Consolidado do Empréstimo (História 7)
+      description: Coleção minuciosa com todas as divisões progressivas de saldo contábil estressado nas tabelas do contrato.
+      operationId: listarParcelasEmprestimo
+      tags:
+        - Parcelas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID da transação pai atrelada (empréstimo).
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Desdobramento das faturas retornado com êxito.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Parcela'
+  /parcelas/{id}:
+    get:
+      summary: Diagnóstico Individual da Fatura Mensal (História 7)
+      description: Visão isolada e particular extraída via chave primária.
+      operationId: buscarParcelaPorId
+      tags:
+        - Parcelas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Fração exata localizada.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Parcela'
+        '404':
+          description: Fatura especificada não corresponde a registros internos.
+  /parcelas/{id}/pagamento:
+    patch:
+      summary: Baixa Operacional (Simulação de Pagamento)
+      description: Marca irreversivelmente um status local definindo-o como `PAGA` simulando encerramento de pendência pelo indivíduo.
+      operationId: baixarParcela
+      tags:
+        - Parcelas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Baixa concretizada em banco de dados sem retorno redundante atrelado.
+        '400':
+          description: Condição impedia de efetivar quitação (ex. status anterior já denotava quitação do período).
+
+components:
+  schemas:
+    EmprestimoRequest:
+      type: object
+      description: Dicionário transacional da captação de intenção por crédito.
+      properties:
+        clienteId:
+          type: string
+          format: uuid
+          description: Usuário dono da prospecção.
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        valorTotal:
+          type: number
+          format: float
+          description: O preço bruto acordado (Reais).
+          example: 10000.00
+        quantidadeParcelas:
+          type: integer
+          description: Períodos estendendo a alocação dos balanços temporais (Meses).
+          example: 12
+        tipoAmortizacao:
+          type: string
+          enum: [SAC, PRICE]
+          description: Padrão atuarial engajado na formulação matemática progressiva.
+          example: "SAC"
+      required:
+        - clienteId
+        - valorTotal
+        - quantidadeParcelas
+        - tipoAmortizacao
+    Parcela:
+      type: object
+      description: Fatura indivisível ilustrando uma única barreira mensal temporal do empréstimo.
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "ba7d4c2b-8a1a-4d2a-a92c-68e1ab4c885c"
+        ordem:
+          type: integer
+          description: Número que mapeia quão cedo o pedaço acontecerá na esteira (1 corresponde ao debito do 1º mês).
+          example: 1
+        dataVencimento:
+          type: string
+          format: date
+          example: "2024-05-15"
+        valorAmortizacao:
+          type: number
+          format: float
+          description: Quantidade exata estática ou variante dedicada apenas a derreter o principal original da dívida.
+          example: 833.33
+        valorJuros:
+          type: number
+          format: float
+          description: O lastro ou custo inflacionado temporal do mês incidindo estritamente contra o saldo devedor recém computado.
+          example: 200.00
+        valorPrestacao:
+          type: number
+          format: float
+          description: Resultado absoluto extraído da somatória final de Amortização base e dos Juros daquele prazo.
+          example: 1033.33
+        status:
+          type: string
+          enum: [PENDENTE, PAGA, CANCELADA]
+          description: Situação lógica da fatura, servindo de porta aberta para eventuais quitações (PATCH).
+          example: "PENDENTE"
+        saldoDevedor:
+          type: number
+          format: float
+          description: Fotografia de quitação de longo prazo ainda devida na ausência do aporte final engajado desta fatura.
+          example: 9166.67
+    EmprestimoResponse:
+      type: object
+      description: Raiz agregada da concessão já exposta englobando de dezenas a centenas de blocos matemáticos computados (`Parcela`) finalizada.
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a38c2020-f463-4b6a-986c-7e3f81ad50c4"
+        clienteId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        valorTotal:
+          type: number
+          format: float
+          example: 10000.00
+        quantidadeParcelas:
+          type: integer
+          example: 12
+        tipoAmortizacao:
+          type: string
+          enum: [SAC, PRICE]
+          example: "SAC"
+        taxaJurosMensal:
+          type: integer
+          description: O multiplicador estático chancelado pelo simulador terceirizado no passo primário da integração salvada no contrato permanentemente.
+          example: 2
+        status:
+          type: string
+          enum: [PENDENTE, PAGO]
+          example: "PENDENTE"
+        parcelas:
+          type: array
+          description: Array integral com o espelhamento completo de meses gerados durante a engenharia da calculadora SAC ou PRICE interna exposto ao Consumidor pela resposta HTTP.
+          items:
+            $ref: '#/components/schemas/Parcela'

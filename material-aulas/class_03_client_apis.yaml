@@ -3,6 +3,12 @@ info:
   title: Cliente API (Aula 03)
   description: API de gerenciamento de clientes com preenchimento automático de endereço via integração com ViaCEP.
   version: 1.1.0
+  contact:
+    name: Suporte ADA
+    email: suporte@ada.com.br
+servers:
+  - url: http://localhost:8080
+    description: Local Server
 tags:
   - name: Clientes
     description: Operações relacionadas ao cadastro e consulta de clientes
@@ -11,6 +17,7 @@ paths:
     get:
       summary: Lista todos os clientes
       description: Retorna uma lista de todos os clientes cadastrados no sistema.
+      operationId: listClients
       tags:
         - Clientes
       responses:
@@ -25,6 +32,7 @@ paths:
     post:
       summary: Cadastra um novo cliente
       description: Recebe os dados básicos e o CEP. O sistema consulta a API do ViaCEP e retorna o cliente com logradouro e bairro preenchidos.
+      operationId: createClient
       tags:
         - Clientes
       requestBody:
@@ -46,6 +54,7 @@ paths:
     get:
       summary: Busca um cliente pelo documento
       description: Retorna os detalhes de um único cliente buscando pelo seu CPF/CNPJ.
+      operationId: getClientByDocument
       tags:
         - Clientes
       parameters:
@@ -65,6 +74,43 @@ paths:
                 $ref: '#/components/schemas/ClienteResponse'
         '404':
           description: Cliente não encontrado para o documento informado.
+  /clientes/{clienteId}/taxas/{tipoAmortizacao}/elegibilidade:
+    get:
+      summary: Executa análise de risco e consulta índice da taxa
+      description: Endpoint HTTP GET que avalia a saúde financeira do cliente com base no seu UUID e retorna a taxa de juros ou rejeita a transação caso a elegibilidade falhe.
+      tags:
+        - Clientes
+      operationId: checkEligibility
+      parameters:
+        - name: clienteId
+          in: path
+          required: true
+          description: Identificador único UUID de conta do solicitante.
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+        - name: tipoAmortizacao
+          in: path
+          required: true
+          description: Sistema de amortização selecionado pelo solicitante.
+          schema:
+            type: string
+            enum: [SAC, PRICE]
+            example: "SAC"
+      responses:
+        '200':
+          description: Solicitação aprovada. Retorna a taxa de juros calculada aplicável.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateResponse'
+        '400':
+          description: Cliente inelegível, reprovado pela política interna do banco ou risco alto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
     ClienteRequest:
@@ -134,3 +180,35 @@ components:
           description: Complemento retornado. Se não fornecido, preenchido como 'N/A'.
           example: "Apto 42"
           default: "N/A"
+    RateResponse:
+      type: object
+      description: Objeto contendo os dados e a referência da taxa consultada.
+      properties:
+        clientId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+          description: O identificador único de base UUID que foi avaliado.
+        taxaJurosMensal:
+          type: number
+          format: integer
+          example: 2
+          description: Taxa de juros do mês indexada em formato fracionário (ex. 0.02 corresponde a incidência de 2% ao mês).
+      required:
+        - clientId
+        - taxaJurosMensal
+    ErrorResponse:
+      type: object
+      description: Resposta genérica da barreira de integridade focada na clareza informativa.
+      properties:
+        codigo:
+          type: string
+          example: "CREDITO_REPROVADO"
+          description: Identificador padronizado da causa do erro.
+        mensagem:
+          type: string
+          example: "O cliente informado não atendeu aos critérios técnicos de elegibilidade."
+          description: Detalhamento explícito destinado ao mapeamento da UI do sistema.
+      required:
+        - codigo
+        - mensagem
