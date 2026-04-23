@@ -71,13 +71,13 @@ Por fim, salve num movimento atômico o Empréstimo (raiz) agregando todas as su
 
 ---
 
-*Total Obrigatório: 100 pontos.*
+*Total: 100 pontos.*
 
 ## Desafios Extras Completos (Opcional)
 
 - Expor requisições de listagem suportando paginação.
 
-- Construir Profile no Quarkus exclusivo (`%prod`) parametrizando variáveis de banco que consigam ler variáveis de ambiente do PostgreSQL, superando dev e test com o database na memoria h2.
+- Cobertura das histórias com testes utilizando `@QuarkusIntegrationTest` e `RestAssured`.
 
 ## Instruções de Entrega
 

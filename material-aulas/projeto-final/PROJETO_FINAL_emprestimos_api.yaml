@@ -18,10 +18,12 @@ paths:
   /emprestimos:
     get:
       summary: Listagem de Contratos (História 5)
-      description: Retorna a coleção de empréstimos consolidados previamente. Pode utilizar o ID do cliente via query params para filtrar a busca (ou abstraí-lo inteiramente via token de segurança, dependendo da abordagem implementada).
+      description: Retorna a coleção de empréstimos consolidados previamente.
       operationId: listarEmprestimos
       tags:
         - Empréstimos
+      security:
+        - basicAuth: []
       parameters:
         - name: clienteId
           in: query
@@ -39,12 +41,16 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/EmprestimoResponse'
+        '401':
+          description: Não autenticado.
     post:
       summary: Criação e Avaliação de Empréstimo (Histórias 1 e 2)
-      description: Ponto de partida transacional. Aciona a API Externa de Elegibilidade (via REST Client) visando coletar aprovação e juros do cliente, executa internamente o cálculo das parcelas estipuladas e persiste as faturas recursivamente via banco de dados local.
+      description: Ponto de partida transacional. Aciona a API Externa de Elegibilidade (via REST Client), executa internamente o cálculo das parcelas e persiste as faturas.
       operationId: criarEmprestimo
       tags:
         - Empréstimos
+      security:
+        - basicAuth: []
       requestBody:
         required: true
         content:
@@ -59,14 +65,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/EmprestimoResponse'
         '400':
-          description: Rejeição motivada por parâmetros mal formatados (Bean Validation limitando dados como quantidade excessiva de meses, e valores ilegais) ou risco financeiro negado repassado pela API de Elegibilidade.
+          description: Rejeição motivada por parâmetros mal formatados (Bean Validation) ou risco financeiro negado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado.
   /emprestimos/{id}:
     delete:
       summary: Revogação Fictícia e Deleção de Empréstimo (História 3 - Rota Segura)
-      description: Rota engessada obrigatoriamente por autorização explícita mapeada para perfis @RolesAllowed("Gerente"). Causa o purge do banco daquele financiamento.
+      description: Rota engessada obrigatoriamente por autorização explícita mapeada para perfis @RolesAllowed("Gerente").
       operationId: deletarEmprestimo
       tags:
         - Empréstimos
+      security:
+        - basicAuth: []
       parameters:
         - name: id
           in: path
@@ -76,9 +90,9 @@ paths:
             format: uuid
       responses:
         '204':
-          description: Purge completo executado com sucesso e ausência de retorno no payload.
+          description: Purge completo executado com sucesso.
         '401':
-          description: Inexistência de credenciais vigentes no tráfego gerando rejeição frontal.
+          description: Inexistência de credenciais vigentes.
         '403':
           description: Acesso validado ao sistema mas faltante de privilégio especial de percurso ("Forbidden").
         '404':
@@ -90,6 +104,8 @@ paths:
       operationId: listarParcelasEmprestimo
       tags:
         - Parcelas
+      security:
+        - basicAuth: []
       parameters:
         - name: id
           in: path
@@ -114,6 +130,8 @@ paths:
       operationId: buscarParcelaPorId
       tags:
         - Parcelas
+      security:
+        - basicAuth: []
       parameters:
         - name: id
           in: path
@@ -135,10 +153,12 @@ paths:
   /parcelas/{id}/pagamento:
     patch:
       summary: Baixa Operacional (Simulação de Pagamento)
-      description: Marca irreversivelmente um status local definindo-o como `PAGA` simulando encerramento de pendência pelo indivíduo.
+      description: Marca irreversivelmente um status local definindo-o como `PAGA`.
       operationId: baixarParcela
       tags:
         - Parcelas
+      security:
+        - basicAuth: []
       parameters:
         - name: id
           in: path
@@ -148,11 +168,15 @@ paths:
             format: uuid
       responses:
         '204':
-          description: Baixa concretizada em banco de dados sem retorno redundante atrelado.
+          description: Baixa concretizada em banco de dados.
         '400':
-          description: Condição impedia de efetivar quitação (ex. status anterior já denotava quitação do período).
+          description: Condição impedia de efetivar quitação.
 
 components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
   schemas:
     EmprestimoRequest:
       type: object
@@ -166,11 +190,15 @@ components:
         valorTotal:
           type: number
           format: float
-          description: O preço bruto acordado (Reais).
+          minimum: 100
+          maximum: 10000000
+          description: O preço bruto acordado (Reais). Mínimo de 100 e Máximo de 10.000.000.
           example: 10000.00
         quantidadeParcelas:
           type: integer
-          description: Períodos estendendo a alocação dos balanços temporais (Meses).
+          minimum: 1
+          maximum: 480
+          description: Períodos (Meses). Mínimo de 1 e Máximo de 480.
           example: 12
         tipoAmortizacao:
           type: string
@@ -182,6 +210,25 @@ components:
         - valorTotal
         - quantidadeParcelas
         - tipoAmortizacao
+    ErrorResponse:
+      type: object
+      properties:
+        mensagem:
+          type: string
+          example: "Erro de validação nos campos enviados"
+        campos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+    ValidationError:
+      type: object
+      properties:
+        nome:
+          type: string
+          example: "valorTotal"
+        erro:
+          type: string
+          example: "deve ser maior ou igual a 100"
     Parcela:
       type: object
       description: Fatura indivisível ilustrando uma única barreira mensal temporal do empréstimo.

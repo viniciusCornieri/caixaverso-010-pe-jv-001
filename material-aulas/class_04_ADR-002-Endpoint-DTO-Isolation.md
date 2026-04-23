@@ -13,7 +13,7 @@ Atualmente, as APIs estão sendo construídas. Ao retornar objetos de domínio d
 Estabelecemos que **objetos de domínio (Entities/Models) nunca devem ser retornados diretamente pelos métodos dos Controllers (Resources)**.
 
 1. **DTO (Data Transfer Objects)**: Toda comunicação externa (entrada e saída) deve ser feita exclusivamente através de DTOs.
-2. **Mapeamento**: Os Use Cases ou Services devem ser responsáveis por converter objetos de domínio em DTOs antes de retorná-los para o Resource.
+2. **Mapeamento**: Os Services devem ser responsáveis por converter objetos de domínio em DTOs antes de retorná-los para o Resource.
 3. **Isolamento de Contrato**: Mudanças na estrutura do banco de dados ou no domínio interno não devem quebrar o contrato da API automaticamente.
 
 ## Consequências

@@ -13,7 +13,7 @@ config:
 ---
 flowchart TD
     Client[Cliente Frontend] -->|POST Emprestimos| API_Layer[Controllers]
-    API_Layer -->|Validations| Business_Layer[Use Cases]
+    API_Layer -->|Validations| Business_Layer[Services]
 
     subgraph MS [Microsserviço de Empréstimos local]
         API_Layer
@@ -52,7 +52,7 @@ O microsserviço de "Gestão de Empréstimos" gerencia todo o modelo e o cálcul
   - Bloqueiam inconsistências de envio imediatamente pelo Framework (utilizando anotações Bean Validation no Request).
   - Encapsulam exceções padronizando saídas formatadas com um JSON simples através de implementações de ExceptionMapper.
 
-- **Use Cases (Camada de Regras de Negócios):**
+- **Services (Camada de Regras de Negócios):**
 
   - Comunicam de forma segura utilizando abstração RestClient do Microprofile para as rotas externas modeladas em `PROJETO_FINAL_taxas_api.yaml`.
   - Processam o array sequencial de Parcelas (Cálculos SAC/PRICE) e aplicam a base do juros referenciado localmente sobre o andamento e preenchimento cronológico.
