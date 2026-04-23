@@ -1,11 +1,16 @@
 package com.ada.domain.cliente;
 
-import lombok.Builder;
-import lombok.Data;
+import io.quarkus.hibernate.panache.PanacheEntity;
+import jakarta.persistence.Entity;
+import lombok.*;
 
+@EqualsAndHashCode(callSuper = true)
+@Entity
 @Data
 @Builder
-public class Endereco {
+@NoArgsConstructor
+@AllArgsConstructor
+public class Endereco extends PanacheEntity {
 
     private String cep;
     private String numero;

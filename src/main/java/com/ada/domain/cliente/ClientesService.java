@@ -5,24 +5,25 @@ import com.ada.domain.cep.dto.CEPRestClient;
 import com.ada.domain.cliente.dto.ClienteResponseDTO;
 import com.ada.domain.cliente.dto.CriarClienteDTO;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.core.Response;
+import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @ApplicationScoped
 public class ClientesService {
 
-    private final List<Cliente> clientes = new ArrayList<>();
+    @Inject
+    private ClienteRepository clienteRepository;
 
     @Inject
     @RestClient
     private CEPRestClient cepRestClient;
 
+    @Transactional
     public ClienteResponseDTO criarCliente(CriarClienteDTO criarClienteDTO) {
         CEPResponseDTO response = cepRestClient.getByCep(criarClienteDTO.cep());
 
@@ -35,24 +36,25 @@ public class ClientesService {
                 .build();
 
         Cliente novoCliente = new Cliente(
+                UUID.randomUUID(),
                 criarClienteDTO.nome(),
                 criarClienteDTO.documento(),
                 endereco);
-        clientes.add(novoCliente);
+
+        clienteRepository.persist(novoCliente);
         return ClienteResponseDTO.from(novoCliente);
     }
 
     public List<ClienteResponseDTO> listarClientes() {
-        return clientes
-                .stream()
+        return clienteRepository
+                .streamAll()
                 .map(ClienteResponseDTO::from)
                 .toList();
     }
 
     public Optional<ClienteResponseDTO> consultarPorDocumento(String documento) {
-        return clientes.stream()
-                .filter(c -> c.getDocumento().equals(documento))
-                .map(ClienteResponseDTO::from)
-                .findFirst();
+        return clienteRepository.find("documento", documento)
+                .firstResultOptional()
+                .map(ClienteResponseDTO::from);
     }
 }
