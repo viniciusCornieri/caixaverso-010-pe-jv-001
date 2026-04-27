@@ -25,6 +25,10 @@ public class ClientesService {
 
     @Transactional
     public ClienteResponseDTO criarCliente(CriarClienteDTO criarClienteDTO) {
+        if (clienteRepository.count("documento", criarClienteDTO.documento()) > 0) {
+            throw new DuplicatedClienteException("documento", "Já existe um cliente com este documento");
+        }
+
         CEPResponseDTO response = cepRestClient.getByCep(criarClienteDTO.cep());
 
         Endereco endereco = Endereco.builder()

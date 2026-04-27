@@ -213,20 +213,23 @@ components:
     ErrorResponse:
       type: object
       properties:
-        mensagem:
+        title:
           type: string
-          example: "Erro de validação nos campos enviados"
-        campos:
+          example: "Constraint Violation"
+        status:
+          type: integer
+          example: 400
+        violations:
           type: array
           items:
             $ref: '#/components/schemas/ValidationError'
     ValidationError:
       type: object
       properties:
-        nome:
+        field:
           type: string
-          example: "valorTotal"
-        erro:
+          example: "criarEmprestimo.emprestimoDTO.valorTotal"
+        message:
           type: string
           example: "deve ser maior ou igual a 100"
     Parcela:

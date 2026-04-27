@@ -23,6 +23,7 @@ public class Cliente extends PanacheEntityBase {
 
     private String nome;
 
+    @Column(unique = true)
     private String documento;
 
     @OneToOne(cascade = CascadeType.ALL)

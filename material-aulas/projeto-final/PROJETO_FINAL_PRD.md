@@ -18,7 +18,7 @@ O Microsserviço de Empréstimos (Loans) é a aplicação prática central do pr
 
 * Persistir dados utilizando Hibernate Panache (H2 ou PostgreSQL).
 
-* Restringir ações críticas aplicando Roles de segurança (ex: Gerente).
+* (Opcional) Restringir ações críticas aplicando Roles de segurança (ex: Gerente).
 
 ## 3. Requisitos de Dados e Restrições de Negócio
 
@@ -63,7 +63,7 @@ O Microsserviço de Empréstimos (Loans) é a aplicação prática central do pr
   * O sistema consulta internamente a taxa com o serviço parceiro.
   * A aplicação efetua o cálculo (SAC/PRICE) e persiste o contrato em cascata com suas parcelas, retornando o `Status 201 Created`.
 
-### Story 3: Proteção de Deleção Exclusiva
+### Story 3: Proteção de Deleção Exclusiva (Opcional)
 
 **Como** gerente do sistema, **eu exijo** que o cancelamento de contratos e deleção de dados críticos seja restrito, **para evitar** exclusões indevidas do histórico financeiro.
 
@@ -79,8 +79,12 @@ O Microsserviço de Empréstimos (Loans) é a aplicação prática central do pr
 
 * **Critérios de Aceite**:
 
-  * Entradas inválidas (como prazos acima de 480 meses ou tipo de amortização inexistente) devem ser interceptadas via Bean Validation.
-  * A resposta de erro padrão deve retornar `Status 400 Bad Request` contendo um JSON detalhado que lista objetivamente qual coluna e qual regra não foram cumpridas.
+  * Os dados de entrada de empréstimo devem respeitar as seguintes regras e a execução deve ser interrompida prematuramente em caso de violação:
+    * `clienteId` deve ser um identificador válido de UUID.
+    * `valorTotal` deve estar entre R$ 100,00 e R$ 10.000.000,00.
+    * `quantidadeParcelas` deve estar no intervalo de 1 a 480 meses.
+    * `tipoAmortizacao` deve corresponder estritamente a `SAC` ou `PRICE`.
+    * A resposta de erro padrão deve retornar `Status 400 Bad Request` contendo um JSON detalhado que lista objetivamente qual campo e qual regra não foram cumpridas.
 
 ### Story 5: Listagem Pessoal de Contratos
 

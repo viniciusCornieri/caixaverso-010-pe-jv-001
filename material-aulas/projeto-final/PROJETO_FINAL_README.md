@@ -45,17 +45,17 @@ Por fim, salve num movimento atômico o Empréstimo (raiz) agregando todas as su
 
 - **[15 pts]** Atendimento Nível 2 na maturidade de Richardson. Mantenha os caminhos em plural, verbos operando coesos com e objetos JSON padronizados.
 
-### 4. Validação (10 pontos)
+### 4. Validação (15 pontos)
 
-- **[10 pts]** Mecanismos bloqueadores do Quarkus Hibernate Validator: Validação mandatória declarada via constraints nos requests (`valorTotal` engessado na barreira entre R$100.00 e R$10.000.000, tipos enumerados).
+- **[15 pts]** Mecanismos bloqueadores do Quarkus Hibernate Validator: Validação mandatória declarada via constraints nos requests (`valorTotal` engessado na barreira entre R$100.00 e R$10.000.000, tipos enumerados).
 
 ### 5. Media-Types HTTP (5 pontos)
 
 - **[5 pts]** Configurações do Header travando processamentos a JSON puro (retornando as indicações corretas de requisição não suportada).
 
-### 6. Centralização e Exceções (10 pontos)
+### 6. Centralização e Exceções (15 pontos)
 
-- **[10 pts]** Criação isolada de `ExceptionMapper` de instâncias de erro lançadas em Runtime pelo Quarkus e seus validadores internos (ou falhas no HTTP client). Nenhuma view ou payload ao consumidor deve constar uma falha java na StackTrace original.
+- **[15 pts]** Criação isolada de `ExceptionMapper` de instâncias de erro lançadas em Runtime pelo Quarkus e seus validadores internos (ou falhas no HTTP client). Nenhuma view ou payload ao consumidor deve constar uma falha java na StackTrace original.
 
 ### 7. Banco de Dados e ORM (15 pontos)
 
@@ -65,17 +65,15 @@ Por fim, salve num movimento atômico o Empréstimo (raiz) agregando todas as su
 
 - **[5 pts]** Uso amplo de Injeção de Dependências nativas da tecnologia implementada na Stack (CDI).
 
-### 9. Segurança via Perfil (10 pontos)
-
-- **[10 pts]** Restrição mandatória no deleite do Quarkus framework (Security). Todo acesso sensível deve barrar requests baseando em autenticação prévia (e.g. métodos restritos por `@RolesAllowed("Gerente")`).
-
 ---
 
 *Total: 100 pontos.*
 
-## Desafios Extras Completos (Opcional)
+## Desafios Extras (Opcional)
 
 - Expor requisições de listagem suportando paginação.
+
+- Aplicar mecanismos de autenticação e autorização nas APIs.
 
 - Cobertura das histórias com testes utilizando `@QuarkusIntegrationTest` e `RestAssured`.
 

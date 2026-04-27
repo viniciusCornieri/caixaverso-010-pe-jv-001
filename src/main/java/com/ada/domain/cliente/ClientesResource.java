@@ -4,6 +4,8 @@ import com.ada.domain.cliente.dto.ClienteResponseDTO;
 import com.ada.domain.cliente.dto.ConsultaDeTaxaResponseDTO;
 import com.ada.domain.cliente.dto.CriarClienteDTO;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -28,7 +30,7 @@ public class ClientesResource {
     }
 
     @POST
-    public Response criarCliente(CriarClienteDTO criarClienteDTO) {
+    public Response criarCliente(@Valid @NotNull CriarClienteDTO criarClienteDTO) {
 
         return Response
                 .status(Response.Status.CREATED)
