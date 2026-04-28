@@ -7,12 +7,16 @@ import com.ada.domain.cliente.dto.CriarClienteDTO;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.hibernate.exception.ConstraintViolationException;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @ApplicationScoped
 public class ClientesService {
 
@@ -24,20 +28,15 @@ public class ClientesService {
     private CEPRestClient cepRestClient;
 
     @Transactional
+    @Retry(maxRetries = 1, delay = 100)
     public ClienteResponseDTO criarCliente(CriarClienteDTO criarClienteDTO) {
         if (clienteRepository.count("documento", criarClienteDTO.documento()) > 0) {
             throw new DuplicatedClienteException("documento", "Já existe um cliente com este documento");
         }
 
-        CEPResponseDTO response = cepRestClient.getByCep(criarClienteDTO.cep());
+        log.info("Criando cliente XPTO");
 
-        Endereco endereco = Endereco.builder()
-                .cep(criarClienteDTO.cep())
-                .numero(criarClienteDTO.numero())
-                .complemento(criarClienteDTO.complemento())
-                .logradouro(response.logradouro())
-                .bairro(response.bairro())
-                .build();
+        Endereco endereco = criarEndereco(criarClienteDTO);
 
         Cliente novoCliente = new Cliente(
                 UUID.randomUUID(),
@@ -45,8 +44,22 @@ public class ClientesService {
                 criarClienteDTO.documento(),
                 endereco);
 
-        clienteRepository.persist(novoCliente);
+        clienteRepository.persistAndFlush(novoCliente);
+        log.debug("Cliente criado com sucesso");
+
         return ClienteResponseDTO.from(novoCliente);
+    }
+
+    private Endereco criarEndereco(CriarClienteDTO criarClienteDTO) {
+        CEPResponseDTO response = cepRestClient.getByCep(criarClienteDTO.cep());
+
+        return Endereco.builder()
+                .cep(criarClienteDTO.cep())
+                .numero(criarClienteDTO.numero())
+                .complemento(criarClienteDTO.complemento())
+                .logradouro(response.logradouro())
+                .bairro(response.bairro())
+                .build();
     }
 
     public List<ClienteResponseDTO> listarClientes() {
