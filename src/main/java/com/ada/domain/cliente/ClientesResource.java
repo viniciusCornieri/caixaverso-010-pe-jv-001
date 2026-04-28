@@ -3,6 +3,9 @@ package com.ada.domain.cliente;
 import com.ada.domain.cliente.dto.ClienteResponseDTO;
 import com.ada.domain.cliente.dto.ConsultaDeTaxaResponseDTO;
 import com.ada.domain.cliente.dto.CriarClienteDTO;
+import io.quarkus.security.Authenticated;
+import io.quarkus.security.PermissionsAllowed;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -16,6 +19,7 @@ import java.util.UUID;
 
 @Path("/clientes")
 @Produces(MediaType.APPLICATION_JSON)
+@Authenticated
 public class ClientesResource {
 
     @ConfigProperty(name = "taxas.valor-simulado")
@@ -25,6 +29,7 @@ public class ClientesResource {
     private ClientesService clientesService;
 
     @GET
+    @RolesAllowed({"Gerente", "Admin"})
     public List<ClienteResponseDTO> consultaClientes() {
         return clientesService.listarClientes();
     }
